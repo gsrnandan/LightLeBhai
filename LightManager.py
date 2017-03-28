@@ -30,12 +30,16 @@ class MainControlWindow(QtGui.QDialog):
          
          super(MainControlWindow, self).__init__(parent)
          self.setWindowFlags(QtCore.Qt.Tool)
+         
+         self.setWindowTitle("LightLeBhai")
          self.ui =  customUI.Ui_Form()
          self.ui.setupUi(self)    
          self.ui.pushButton.clicked.connect(self.reloadLights)
     
      def reloadLights(self):
-         lightListPanel()
+            self.deleteLater()
+            lightListPanel()
+            
 
 #Populating the Maya Lights
 def getMayaLights():
@@ -82,12 +86,9 @@ def changeTemp(light, val):
 
 #Create a Window
 def lightListPanel():
-    parent = getMayaWindow()
-    if (cmds.window(UserWindow, exists=True)):
-        cmds.deleteUI(UserWindow)
-    UserWindow  = MainControlWindow(parent)
-    UserWindow.show()
-
+	win = MainControlWindow(parent = getMayaWindow())	
+	win.show()
+   
 lightListPanel()    
 
 
