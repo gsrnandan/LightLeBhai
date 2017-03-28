@@ -86,11 +86,13 @@ def changeTemp(light, val):
 
 #Create a Window
 def lightListPanel():
-	win = MainControlWindow(parent = getMayaWindow())	
+	win = MainControlWindow(parent = getMayaWindow())
+	win.setWindowTitle("LightLeBhai")	
 	win.show()
    
 lightListPanel()    
-
+getMayaLights()
+getArnoldLights()
 
 
 # Create a template attributes for each light
