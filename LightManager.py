@@ -35,11 +35,55 @@ class MainControlWindow(QtGui.QDialog):
          self.ui =  customUI.Ui_Form()
          self.ui.setupUi(self)    
          self.ui.pushButton.clicked.connect(self.reloadLights)
+         self.ui.pushButton_2.clicked.connect(self.refreshLights)
+         self.ui.pushButton_3.clicked.connect(self.showLinkedObjects)
+         self.ui.pushButton_4.clicked.connect(self.setLinkedObjects)
+
+
     
      def reloadLights(self):
             self.deleteLater()
             lightListPanel()
             
+     def refreshLights(self):
+         print "Hi"
+         
+         
+     def getSelected(self):
+         lightName = cmds.ls( selection=True)
+         print lightName
+         if len(lightName) > 1:
+             print "Please select One Light"
+             pass
+         else:
+             return lightName 
+         
+     def showLinkedObjects(self):
+         lightName = self.getSelected()
+         print lightName
+         if len(lightName) < 1:
+             print "Please select a light"
+             pass
+         else:
+             objectsLinked = cmds.lightlink(q = True, light = lightName , sets = False)
+             if objectsLinked:
+                 cmds.select(objectsLinked,replace = True )   
+                 
+     def setLinkedObjects(self):
+         	# get all linked objects (transforms and shapes, only. Not shadingEngines or sets. we will keep them)
+	objectsRelated = cmds.lightlink( q = True, light=lightName, sets= False)
+	
+	# break links with those objects
+	cmds.lightlink( b=True, light=lightName, object = objectsRelated )
+
+	# get selected shapes and transforms with selected objects
+	objectsRelated = cmds.ls( selection = True, type = ('transform','shape') )
+
+	# make new links
+	cmds.lightlink( light=lightName, object = objectsRelated )
+         
+           
+          
 
 #Populating the Maya Lights
 def getMayaLights():
