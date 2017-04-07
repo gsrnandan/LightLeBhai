@@ -23,6 +23,46 @@ def getMayaWindow():
     return shiboken.wrapInstance(long(pointer),QtGui.QWidget)
 
 
+#Create a model class for the TableView
+class myModel(QtCore.QAbstractTableModel):
+    
+    def __init__(self,parent,lightType,header,*args):
+        QtCore.QAbstractTableModel.__init__(self,parent,*args)
+        self.lightType = lightType
+        self.param = header
+    
+    def rowCount(self,parent):
+        if ( self.lightType == "Maya"):
+            return len(getMayaLights())
+        elif (self.lightType == "Arnold"):
+            return len(getArnoldLights())
+        else:
+            return 0
+        
+    def columnCount(self,parent):
+        return len(getHeader())
+        
+    def data(self, index, role):
+        if not index.isValid():
+            return None
+        elif role != Qt.DisplayRole:
+            return None
+            
+        if (self.lightType == "Maya"):
+            lights = getMayaLights()
+        elif (self.lightType == "Arnold"):
+            lights = getArnoldLights()
+        return lights[index.row()]
+        
+    def headerData(self, col, orientation, role):
+        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+            return self.param[col]
+        return None
+        
+    
+    
+
+
 #Create Main Window for Maya
 class MainControlWindow(QtGui.QDialog):
      
@@ -30,10 +70,23 @@ class MainControlWindow(QtGui.QDialog):
          
          super(MainControlWindow, self).__init__(parent)
          self.setWindowFlags(QtCore.Qt.Tool)
-         
          self.setWindowTitle("LightLeBhai")
          self.ui =  customUI.Ui_Form()
-         self.ui.setupUi(self)    
+         self.ui.setupUi(self)
+         # set the maya table
+         tableModelMaya = myModel(self, "Maya", header)
+         self.ui.tableView.setModel(tableModelMaya)
+         font = QFont("Calibri", 12)
+         self.ui.tableView.setFont(font)
+         # set Arnold table
+         tableModelArnold = myModel(self, "Arnold", header)
+         self.ui.tableView_2.setModel(tableModelArnold)
+         font = QFont("Calibri", 12)
+         self.ui.tableView_2.setFont(font)
+         # set column width to fit contents (set font first!)
+         self.ui.tableView.resizeColumnsToContents()
+         self.ui.tableView_2.resizeColumnsToContents()
+         # set the pushButton Functionality   
          self.ui.pushButton.clicked.connect(self.reloadLights)
          self.ui.pushButton_2.clicked.connect(self.refreshLights)
          self.ui.pushButton_3.clicked.connect(self.showLinkedObjects)
@@ -53,6 +106,7 @@ class MainControlWindow(QtGui.QDialog):
          lightName = cmds.ls( selection=True)
          print lightName
          if len(lightName) > 1:
+             cmds.confirmDialog( title='Error', message='Please select one light', button=['Ok'], defaultButton='Ok', cancelButton='Ok', dismissString='Ok' )
              print "Please select One Light"
              pass
          else:
@@ -62,28 +116,26 @@ class MainControlWindow(QtGui.QDialog):
          lightName = self.getSelected()
          print lightName
          if len(lightName) < 1:
+             cmds.confirmDialog( title='Error', message='Please select a light', button=['Ok'], defaultButton='Ok', cancelButton='Ok', dismissString='Ok' )
              print "Please select a light"
              pass
          else:
              objectsLinked = cmds.lightlink(q = True, light = lightName , sets = False)
              if objectsLinked:
-                 cmds.select(objectsLinked,replace = True )   
-                 
+                 cmds.select(objectsLinked,replace = True )
+    
      def setLinkedObjects(self):
-         	# get all linked objects (transforms and shapes, only. Not shadingEngines or sets. we will keep them)
-	objectsRelated = cmds.lightlink( q = True, light=lightName, sets= False)
-	
-	# break links with those objects
-	cmds.lightlink( b=True, light=lightName, object = objectsRelated )
-
-	# get selected shapes and transforms with selected objects
-	objectsRelated = cmds.ls( selection = True, type = ('transform','shape') )
-
-	# make new links
-	cmds.lightlink( light=lightName, object = objectsRelated )
+        lightName = self.getSelected()
+        objectsLinked = cmds.lightlink( q = True, light=lightName, sets= False)
+        cmds.lightlink( b=True, light=lightName, object = objectsLinked )
+        objectsLinked = cmds.ls( selection = True, type = ('transform','shape') )
+        cmds.lightlink( light=lightName, object = objectsLinked)
          
            
-          
+#Define the parameters
+def getHeader():
+    header = ['Lights','Enable','Isolate','Color','Intensity', 'Decay Rate','Shadows','Shadow Rays','Exposure','Samples','Diffuse','Specular','SSS','Indirect','Volume']
+    return header        
 
 #Populating the Maya Lights
 def getMayaLights():
@@ -109,6 +161,8 @@ def getArnoldLights():
 def getMayaWindow():
     pointer = mui.MQtUtil.mainWindow()
     return shiboken.wrapInstance(long(pointer),QtGui.QWidget)
+
+# Getting Attributes 'Enable','Isolate','Color','Intensity', 'Decay Rate','Shadows','Shadow Rays','Exposure','Samples','Diffuse','Specular','SSS','Indirect','Volume'
     
     
 # Setting Attributes
