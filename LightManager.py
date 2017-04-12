@@ -31,91 +31,193 @@ class mayaLightNodes():
     def __init__(self,lightType,header,lightName):
         self.lightType = lightType
         self.lightName = lightName
+        self.header = header
+        self.attrValues = self.populateDictionary()
 
+    def populateDictionary(self):
+        attrValues =  {}
+        for attr in self.header:
+            attr = attr.replace(" ","")
+            if attr.lower() == "intensity":
+                attrValues[attr.lower()] = self.getIntensity()
+            elif attr.lower() == "color":
+                attrValues[attr.lower()] = list()
+                attrValues[attr.lower()].append(self.getColor())
+            elif attr.lower() == "enable":
+                attrValues[attr.lower()] = self.getEnableState()                
+            elif attr.lower() == "isolate":
+                attrValues[attr.lower()] = self.getEnableState()                   
+            elif attr.lower() == "decayrate":
+                attrValues[attr.lower()] = self.getDecayRate()   
+            elif attr.lower() == "shadows":
+                attrValues[attr.lower()] = self.getShadowsState()                   
+            elif attr.lower() == "shadowrays":
+                attrValues[attr.lower()] = self.getShadowRays()                   
+            elif attr.lower() == "exposure":
+                attrValues[attr.lower()] = self.getExposure()                   
+            elif attr.lower() == "samples":
+                attrValues[attr.lower()] = self.getAiSamples()                   
+            elif attr.lower() == "diffuse":
+                attrValues[attr.lower()] = self.getDiffuseSamples() 
+            elif attr.lower() == "specular":
+                attrValues[attr.lower()] = self.getSpecularSamples()                   
+            elif attr.lower() == "sss":
+                attrValues[attr.lower()] = self.getSSSSamples()
+            elif attr.lower() == "indirect":
+                attrValues[attr.lower()] = self.getIndirectSamples()
+            elif attr.lower() == "volume":
+                attrValues[attr.lower()] = self.getVolumeSamples()
+            elif attr.lower() == "lights":
+                attrValues[attr.lower()] = self.lightName                
+        return attrValues                                                      
+
+    def __getattr__(self,attr):
+        attr = attr.replace(" ","")
+        try:
+            return self.attrValues[attr.lower()]
+        except:
+            print "Maya Attribute not found"                                 
+                
 #Light Intensity     
-    def setIntensity(val):
-        cmds.setAttr(self.lightName+".intensity",val)
-    def getIntensity():
-        return cmds.setAttr(self.lightName+".intensity")
+    def setIntensity(self,val):
+        if cmds.attributeQuery( 'intensity', node=self.lightName, ex = True ):
+            cmds.setAttr(self.lightName+".intensity",val)
+        else:
+            pass
+    def getIntensity(self):
+        if cmds.attributeQuery( 'intensity', node=self.lightName, ex = True ):
+            return cmds.getAttr(self.lightName+".intensity")
+        else:
+            return "NA"
+            
+        
         
 #Color Value of the Light'''    
-    def setColor(light,colorPicker,NPI):
+    def setColor(self,light,colorPicker,NPI):
         colorVal = cmds.colorSliderGrp(colorPicker,q= True, rgb = True)
         cmds.setAttr(light+".colorR",colorVal[0])
         cmds.setAttr(light+".colorG",colorVal[1])
         cmds.setAttr(light+".colorB",colorVal[2])    
-    def getColor(light):
+    def getColor(self):
         lightColor = []
-        lightColor[0] = cmds.getAttr(light+".colorR")
-        lightColor[1] = cmds.getAttr(light+".colorG")
-        lightColor[2] = cmds.getAttr(light+".colorB")
+        lightColor.append(cmds.getAttr(light+".colorR"))
+        lightColor.append(cmds.getAttr(light+".colorG"))
+        lightColor.append(cmds.getAttr(light+".colorB"))
         return lightColor
         
 #Enable and Disable Lights'''    
-    def enableLight():
-        pass        
-    def disableLight():
-        pass
+    def enableLight(self):
+        cmds.setAttr(self.lightName+".visibility",1)
+        return 1        
+    def disableLight(self):
+        cmds.setAttr(self.lightName+".visibility",0)
+        return 0
+    def getEnableState(self):
+        val = cmds.getAttr(self.lightName+".visibility")
+        if val:
+            return True
+        else:
+            return False
 
 #Isolate and integrate Lights'''        
-    def isolateLight():
-        pass        
-    def integrateLight():
-        pass
+    def isolateLight(self):
+        cmds.setAttr(self.lightName+".visibility",1)
+        return 1        
+    def integrateLight(self):
+        cmds.setAttr(self.lightName+".visibility",0)
+        return 0
     
 #Decay Rate for Lights'''    
-    def setDecayRate(val):
+    def setDecayRate(self,val):
         cmds.setAttr(self.lightName+".decayRate",val)        
-    def getDecayRate():
-        return cmds.getAttr(self.lightName+".decayRate")
+    def getDecayRate(self):
+        if cmds.attributeQuery( 'decayRate', node=self.lightName, ex = True ):
+            return cmds.getAttr(self.lightName+".decayRate")
+        else:
+            return "NA"
         
 #Use Ray Trace Shadows for Lights'''
-    def setRayTraceShadow():
+    def setRayTraceShadow(self):
         cmds.setAttr(self.lightName+".useRayTraceShadows",1)
-    def unsetRayTraceShadows():
+    def unsetRayTraceShadows(self):
         cmds.setAttr(self.lightName+".useRayTraceShadows",0)
+    def getShadowsState(self):
+        if cmds.attributeQuery( 'useRayTraceShadows', node=self.lightName, ex = True ):
+            val = cmds.getAttr(self.lightName+".useRayTraceShadows")
+            if val:
+                return True
+            else:
+                return False
+        else:
+            return "NA"
         
 #Setting the number of Shadow Rays'''
-    def setShadowRays(val):
+    def setShadowRays(self,val):
         cmds.setAttr(self.lightName+".shadowRays",val)
-    def getShadowRays():
-        return cmds.getAttr(self.lightName+".shadowRays")
+    def getShadowRays(self):
+        if cmds.attributeQuery( 'shadowRays', node=self.lightName, ex = True ):
+            return cmds.getAttr(self.lightName+".shadowRays")
+        else:
+            return "NA"
+        
         
 #Setting the Exposure of the lights'''
-    def setExposure(val):
+    def setExposure(self,val):
         cmds.setAttr(self.lightName+".exposure",val)
-    def getExposure():
-        return cmds.getAttr(self.lightName+".exposure")
+    def getExposure(self):
+        if cmds.attributeQuery( 'exposure', node=self.lightName, ex = True ):
+            return cmds.getAttr(self.lightName+".exposure")
+        else:
+            return "NA"
+        
         
 #Setting the aiSamples'''
-    def setAiSamples(val):
+    def setAiSamples(self,val):
         cmds.setAttr(self.lightName+".aiSamples",val)
-    def getAiSamples():
-        cmds.getAttr(self.lightName+".aiSamples")
+    def getAiSamples(self):
+        if cmds.attributeQuery( "aiSamples", node = self.lightName , ex = True ):
+            return cmds.getAttr(self.lightName+".aiSamples")
+        else:
+            return "NA"
         
 #Getting and Setting the Diffuse,Specular,SSS,Indirect and Volume Samples'''
 
-    def setDiffuseSamples(val):
+    def setDiffuseSamples(self,val):
         cmds.setAttr(self.lightName+".aiDiffuse",val)
-    def setSpecularSamples(val):
+    def setSpecularSamples(self,val):
         cmds.setAttr(self.lightName+".aiSpecular",val)
-    def setSSSSamples(val):
+    def setSSSSamples(self,val):
         cmds.setAttr(self.lightName+".aiSss",val)
-    def setIndirectSamples(val):
+    def setIndirectSamples(self,val):
         cmds.setAttr(self.lightName+".aiIndirect",val)
-    def setVolumeSamples(val):
+    def setVolumeSamples(self,val):
         cmds.setAttr(self.lightName+".aiVolume",val)
         
-    def getDiffuseSamples():
-        return cmds.getAttr(self.lightName+".aiDiffuse")
-    def getSpecularSamples():
-        return cmds.getAttr(self.lightName+".aiSpecular")
-    def getSSSSamples(val):
-        return cmds.getAttr(self.lightName+".aiSss")
-    def getIndirectSamples(val):
-        return cmds.getAttr(self.lightName+".aiIndirect")
-    def getVolumeSamples(val):
-        return cmds.getAttr(self.lightName+".aiVolume")
+    def getDiffuseSamples(self):
+        if cmds.attributeQuery( 'aiDiffuse', node=self.lightName, ex = True ):
+            return cmds.getAttr(self.lightName+".aiDiffuse")
+        else:
+            return "NA"
+    def getSpecularSamples(self):
+        if cmds.attributeQuery( 'aiSpecular', node=self.lightName, ex = True ):
+            return cmds.getAttr(self.lightName+".aiSpecular")
+        else:
+            return "NA"
+    def getSSSSamples(self):
+        if cmds.attributeQuery( 'aiSss', node=self.lightName, ex = True ):
+            return cmds.getAttr(self.lightName+".aiSss")
+        else:
+            return "NA"
+    def getIndirectSamples(self):
+        if cmds.attributeQuery( 'aiIndirect', node=self.lightName, ex = True ):
+            return cmds.getAttr(self.lightName+".aiIndirect")
+        else:
+            return "NA"
+    def getVolumeSamples(self):
+        if cmds.attributeQuery( 'aiVolume', node=self.lightName, ex = True ):
+            return cmds.getAttr(self.lightName+".aiVolume")
+        else:
+            return "NA"
             
                      
 #Create a class for Arnold Lights
@@ -124,112 +226,234 @@ class arnoldLightNodes():
     def __init__(self,lightType,header,lightName):
         self.lightType = lightType
         self.lightName = lightName
+        self.header = header
+        self.attrValues = self.populateDictionary()
+    
+    def populateDictionary(self):
+        attrValues =  {}
+        for attr in self.header:
+            attr = attr.replace(" ","")
+            if attr.lower() == "intensity":
+                attrValues[attr.lower()] = self.getIntensity()
+            elif attr.lower() == "color":
+                attrValues[attr.lower()] = list()
+                attrValues[attr.lower()].append(self.getColor())
+            elif attr.lower() == "enable":
+                attrValues[attr.lower()] = self.getEnableState()                
+            elif attr.lower() == "isolate":
+                attrValues[attr.lower()] = self.getEnableState()                   
+            elif attr.lower() == "decaytype":
+                attrValues[attr.lower()] = self.getDecayType()   
+            elif attr.lower() == "castshadows":
+                attrValues[attr.lower()] = self.getCastShadowsState()                   
+            elif attr.lower() == "affectvolumetrics":
+                attrValues[attr.lower()] = self.getAffectVolumetricsState()
+            elif attr.lower() == "castvolumetricshadows":
+                attrValues[attr.lower()] = self.getCastVolumetricShadowsState()                                  
+            elif attr.lower() == "exposure":
+                attrValues[attr.lower()] = self.getExposure()                   
+            elif attr.lower() == "samples":
+                attrValues[attr.lower()] = self.getAiSamples()                   
+            elif attr.lower() == "diffuse":
+                attrValues[attr.lower()] = self.getDiffuseSamples() 
+            elif attr.lower() == "specular":
+                attrValues[attr.lower()] = self.getSpecularSamples()                   
+            elif attr.lower() == "sss":
+                attrValues[attr.lower()] = self.getSSSSamples()
+            elif attr.lower() == "indirect":
+                attrValues[attr.lower()] = self.getIndirectSamples()
+            elif attr.lower() == "volume":
+                attrValues[attr.lower()] = self.getVolumeSamples()
+            elif attr.lower() == "lights":
+                attrValues[attr.lower()] = self.lightName              
+        return attrValues        
+    
+    def __getattr__(self,attr):
+        attr = attr.replace(" ","")
+        print "inside arnold getAttr" + " " + attr
+        try:
+            return self.attrValues[attr.lower()]
+        except:
+            print "Arnold Attribute not found"
+            
+        
 
-#Light Intensity'''
-    def setIntensity(val):
-        cmds.setAttr(self.lightName+".intensity",val)    
-    def getIntensity():
-        return cmds.setAttr(self.lightName+".intensity")
+#Light Intensity     
+    def setIntensity(self,val):
+        if cmds.attributeQuery( 'intensity', node=self.lightName, ex = True ):
+            cmds.setAttr(self.lightName+".intensity",val)
+        else:
+            pass
+    def getIntensity(self):
+        if cmds.attributeQuery( 'intensity', node=self.lightName, ex = True ):
+            return cmds.getAttr(self.lightName+".intensity")
+        else:
+            return "NA"
+            
+        
         
 #Color Value of the Light'''    
-    def setColor(light,colorPicker,NPI):
+    def setColor(self,light,colorPicker,NPI):
         colorVal = cmds.colorSliderGrp(colorPicker,q= True, rgb = True)
         cmds.setAttr(light+".colorR",colorVal[0])
         cmds.setAttr(light+".colorG",colorVal[1])
         cmds.setAttr(light+".colorB",colorVal[2])    
-    def getColor(light):
+    def getColor(self):
         lightColor = []
-        lightColor[0] = cmds.getAttr(light+".colorR")
-        lightColor[1] = cmds.getAttr(light+".colorG")
-        lightColor[2] = cmds.getAttr(light+".colorB")
+        lightColor.append(cmds.getAttr(light+".colorR"))
+        lightColor.append(cmds.getAttr(light+".colorG"))
+        lightColor.append(cmds.getAttr(light+".colorB"))
         return lightColor
         
 #Enable and Disable Lights'''    
-    def enableLight():
-        cmds.setAttr(self.lightName+".visibility",1)       
-    def disableLight():
+    def enableLight(self):
+        cmds.setAttr(self.lightName+".visibility",1)
+        return 1        
+    def disableLight(self):
         cmds.setAttr(self.lightName+".visibility",0)
+        return 0
+    def getEnableState(self):
+        val = cmds.getAttr(self.lightName+".visibility")
+        if val:
+            return True
+        else:
+            return False
 
 #Isolate and integrate Lights'''        
-    def isolateLight():
-        cmds.setAttr(self.lightName+".visibility",1)       
-    def integrateLight():
+    def isolateLight(self):
+        cmds.setAttr(self.lightName+".visibility",1)
+        return 1        
+    def integrateLight(self):
         cmds.setAttr(self.lightName+".visibility",0)
+        return 0
     
 #Decay Type for aiLights'''    
-    def setDecayRate(val):
+    def setDecayType(self,val):
         cmds.setAttr(self.lightName+".aiDecayType",val)        
-    def getDecayRate():
-        return cmds.getAttr(self.lightName+".aiDecayType")
+    def getDecayType(self):
+        if cmds.attributeQuery( 'aiDecayType', node=self.lightName, ex = True ):
+            return cmds.getAttr(self.lightName+".aiDecayType")
+        else:
+            return "NA"
+                    
         
 #Use Cast Shadows for Lights'''
-    def setCastShadows():
+    def setCastShadows(self):
         cmds.setAttr(self.lightName+".aiCastShadows",1)
-    def unsetCastShadows():
+    def unsetCastShadows(self):
         cmds.setAttr(self.lightName+".aiCastShadows",0)
+    def getCastShadowsState(self):
+        if cmds.attributeQuery( 'aiCastShadows', node=self.lightName, ex = True ):
+            val = cmds.getAttr(self.lightName+".aiCastShadows")
+            if val:
+                return True
+            else:
+                return False
+        else:
+            return "NA"        
 
 #Affect Volumetrics for aiLights'''
-    def setAffectVolumetrics():
+    def setAffectVolumetrics(self):
         cmds.setAttr(self.lightName+".aiAffectVolumetrics",1)
-    def unsetAffectVolumetrics():
-        cmds.setAttr(self.lightName+".aiAffectVolumetrics",0)        
+    def unsetAffectVolumetrics(self):
+        cmds.setAttr(self.lightName+".aiAffectVolumetrics",0)
+    def getAffectVolumetricsState(self):
+        if cmds.attributeQuery( 'aiAffectVolumetrics', node=self.lightName, ex = True ):
+            val = cmds.getAttr(self.lightName+".aiAffectVolumetrics")
+            if val:
+                return True
+            else:
+                return False
+        else:
+            return "NA"                 
 
 #Affect Cast Volumetric Shadows'''
-    def setVolumetricCastShadows():
+    def setVolumetricCastShadows(self):
         cmds.setAttr(self.lightName+".aiCastVolumetricShadows",1)
-    def unsetVolumetricCastShadows():
+    def unsetVolumetricCastShadows(self):
         cmds.setAttr(self.lightName+".aiCastVolumetricShadows",0)
+    def getCastVolumetricShadowsState(self):
+        if cmds.attributeQuery( 'aiCastVolumetricShadows', node=self.lightName, ex = True ):
+            val = cmds.getAttr(self.lightName+".aiCastVolumetricShadows")
+            if val:
+                return True
+            else:
+                return False
+        else:
+            return "NA"         
         
 #Setting the Exposure of the lights'''
-    def setExposure(val):
+    def setExposure(self,val):
         cmds.setAttr(self.lightName+".aiExposure",val)
-    def getExposure():
-        return cmds.getAttr(self.lightName+".aiExposure")
+    def getExposure(self):
+        if cmds.attributeQuery( 'aiExposure', node=self.lightName, ex = True ):
+            return cmds.getAttr(self.lightName+".aiExposure")
+        else:
+            return "NA"
         
 #Setting the aiSamples'''
-    def setAiSamples(val):
+    def setAiSamples(self,val):
         cmds.setAttr(self.lightName+".aiSamples",val)
-    def getAiSamples():
-        cmds.getAttr(self.lightName+".aiSamples")
+    def getAiSamples(self):
+        if cmds.attributeQuery( "aiSamples", node = self.lightName , ex = True ):
+            return cmds.getAttr(self.lightName+".aiSamples")
+        else:
+            return "NA"
         
 #Getting and Setting the Diffuse,Specular,SSS,Indirect and Volume Samples'''
 
-    def setDiffuseSamples(val):
+    def setDiffuseSamples(self,val):
         cmds.setAttr(self.lightName+".aiDiffuse",val)
-    def setSpecularSamples(val):
+    def setSpecularSamples(self,val):
         cmds.setAttr(self.lightName+".aiSpecular",val)
-    def setSSSSamples(val):
+    def setSSSSamples(self,val):
         cmds.setAttr(self.lightName+".aiSss",val)
-    def setIndirectSamples(val):
+    def setIndirectSamples(self,val):
         cmds.setAttr(self.lightName+".aiIndirect",val)
-    def setVolumeSamples(val):
+    def setVolumeSamples(self,val):
         cmds.setAttr(self.lightName+".aiVolume",val)
         
-    def getDiffuseSamples():
-        return cmds.getAttr(self.lightName+".aiDiffuse")
-    def getSpecularSamples():
-        return cmds.getAttr(self.lightName+".aiSpecular")
-    def getSSSSamples(val):
-        return cmds.getAttr(self.lightName+".aiSss")
-    def getIndirectSamples(val):
-        return cmds.getAttr(self.lightName+".aiIndirect")
-    def getVolumeSamples(val):
-        return cmds.getAttr(self.lightName+".aiVolume")
+    def getDiffuseSamples(self):
+        if cmds.attributeQuery( 'aiDiffuse', node=self.lightName, ex = True ):
+            return cmds.getAttr(self.lightName+".aiDiffuse")
+        else:
+            return "NA"
+    def getSpecularSamples(self):
+        if cmds.attributeQuery( 'aiSpecular', node=self.lightName, ex = True ):
+            return cmds.getAttr(self.lightName+".aiSpecular")
+        else:
+            return "NA"
+    def getSSSSamples(self):
+        if cmds.attributeQuery( 'aiSss', node=self.lightName, ex = True ):
+            return cmds.getAttr(self.lightName+".aiSss")
+        else:
+            return "NA"
+    def getIndirectSamples(self):
+        if cmds.attributeQuery( 'aiIndirect', node=self.lightName, ex = True ):
+            return cmds.getAttr(self.lightName+".aiIndirect")
+        else:
+            return "NA"
+    def getVolumeSamples(self):
+        if cmds.attributeQuery( 'aiVolume', node=self.lightName, ex = True ):
+            return cmds.getAttr(self.lightName+".aiVolume")
+        else:
+            return "NA"
             
 
 #Create a model class for the TableView
 class myModel(QtCore.QAbstractTableModel):
     
-    def __init__(self,parent,lightType,header,*args):
+    def __init__(self,parent,lightType,header,lights,*args):
         QtCore.QAbstractTableModel.__init__(self,parent,*args)
         self.lightType = lightType
         self.param = header
+        self.lights = lights
     
     def rowCount(self,parent):
         if ( self.lightType == "Maya"):
-            return len(getMayaLights())
+            return len(self.lights)
         elif (self.lightType == "Arnold"):
-            return len(getArnoldLights())
+            return len(self.lights)
         else:
             return 0
         
@@ -241,12 +465,9 @@ class myModel(QtCore.QAbstractTableModel):
             return None
         elif role != Qt.DisplayRole:
             return None
-            
-        if (self.lightType == "Maya"):
-            lights = getMayaLights()
-        elif (self.lightType == "Arnold"):
-            lights = getArnoldLights()
-        return lights[index.row()]
+    
+        attr = self.param[index.column()]
+        return self.lights[index.row()].__getattr__(attr)
         
     def headerData(self, col, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
@@ -269,15 +490,18 @@ class MainControlWindow(QtGui.QDialog):
          self.setWindowTitle("LightLeBhai")
          self.ui =  customUI.Ui_Form()
          self.ui.setupUi(self)
+         #Create the light Instances
+         self.mayaLights = self.createMayaLightInstances()
+         self.arnoldLights = self.createArnoldLightInstances()
          # set the maya table
          mayaHeader = getMayaHeader()
-         tableModelMaya = myModel(self, "Maya", mayaHeader)
+         tableModelMaya = myModel(self, "Maya", mayaHeader,self.mayaLights)
          self.ui.tableView.setModel(tableModelMaya)
          font = QtGui.QFont("Calibri", 12)
          self.ui.tableView.setFont(font)
          # set Arnold table
          arnoldHeader = getArnoldHeader()
-         tableModelArnold = myModel(self, "Arnold", arnoldHeader)
+         tableModelArnold = myModel(self, "Arnold", arnoldHeader,self.arnoldLights)
          self.ui.tableView_2.setModel(tableModelArnold)
          font = QtGui.QFont("Calibri", 12)
          self.ui.tableView_2.setFont(font)
@@ -290,7 +514,28 @@ class MainControlWindow(QtGui.QDialog):
          self.ui.pushButton_3.clicked.connect(self.showLinkedObjects)
          self.ui.pushButton_4.clicked.connect(self.setLinkedObjects)
 
-
+     #Create the lightNodes
+     def createMayaLightInstances(self):
+         mayaLights = []
+         Lights = cmds.ls(lights = True)
+         for i in range(len(Lights)):
+             mayaLights.append(mayaLightNodes("Maya",getMayaHeader(),Lights[i]))
+         return mayaLights
+         
+     def createArnoldLightInstances(self):
+         #Checking if the arnold plugin is installed
+         arnoldLights = []
+         if 'mtoa' in cmds.moduleInfo(listModules = True):
+             #Checking if the plugin is loaded
+             if cmds.pluginInfo('mtoa',query = True , settings = True)[0]:
+                 Lights = cmds.ls(exactType = ("aiAreaLight","aiPhotometricLight","aiSkyDomeLight"))
+                 for i in range(len(Lights)):
+                     arnoldLights.append(arnoldLightNodes("Arnold",getArnoldHeader(),Lights[i]))
+                 return arnoldLights
+             else:
+                 print "Arnold not loaded"
+                    
+         return none
     
      def reloadLights(self):
             self.deleteLater()
@@ -333,51 +578,20 @@ class MainControlWindow(QtGui.QDialog):
 #Define the parameters
 def getMayaHeader():
     mayaHeader = ['Lights','Enable','Isolate','Color','Intensity', 'Decay Rate','Shadows','Shadow Rays','Exposure','Samples','Diffuse','Specular','SSS','Indirect','Volume']
+    #mayaHeader = ['Lights','Intensity', 'Decay Rate']
     return mayaHeader
     
 def getArnoldHeader():
-    arnoldHeader = ['Lights','Enable','Isolate','Color','Intensity', 'Decay Rate','Cast Shadows','Affect Volumetrics','Cast Volumetric Shadows', 'Exposure','Samples','Diffuse','Specular','SSS','Indirect','Volume']
+    arnoldHeader = ['Lights','Enable','Isolate','Color','Intensity', 'Decay Type','Cast Shadows','Affect Volumetrics','Cast Volumetric Shadows', 'Exposure','Samples','Diffuse','Specular','SSS','Indirect','Volume']
+    #arnoldHeader = ['Lights','Intensity', 'Decay Type','Cast Volumetric Shadows','Volume']
     return arnoldHeader        
+ 
 
-#Populating the Maya Lights
-def getMayaLights():
-    mayaLights = cmds.ls(lights = True)
-    return mayaLights
-
-
-#Populating the Arnold Lights    
-def getArnoldLights():
-    #Checking if the arnold plugin is installed
-    if 'mtoa' in cmds.moduleInfo(listModules = True):
-        #Checking if the plugin is loaded
-        if cmds.pluginInfo('mtoa',query = True , settings = True)[0]:
-            arnoldLights = cmds.ls(exactType = ("aiAreaLight","aiPhotometricLight","aiSkyDomeLight"))
-            return arnoldLights
-        else:
-            print "Arnold not loaded"
-            
-    return none
-     
      
 #Creating a Maya Window to Append our Gui
 def getMayaWindow():
     pointer = mui.MQtUtil.mainWindow()
     return shiboken.wrapInstance(long(pointer),QtGui.QWidget)
-
-# Getting Attributes 'Enable','Isolate','Color','Intensity', 'Decay Rate','Shadows','Shadow Rays','Exposure','Samples','Diffuse','Specular','SSS','Indirect','Volume'
-    
-    
-# Getting and Setting Attributes
-
-
-    
-
-	
-def setExposure(light,val):
-    cmds.setAttr(light+".aiexposure",val)
-    
-def changeTemp(light, val):
-    cmds.setAttr(light+".aiColorTemperature",val)
 
 #Create a Window
 def lightListPanel():
@@ -386,8 +600,7 @@ def lightListPanel():
 	win.show()
    
 lightListPanel()    
-getMayaLights()
-getArnoldLights()
+
 
 
 # Create a template attributes for each light
