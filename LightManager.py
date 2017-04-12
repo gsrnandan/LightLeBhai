@@ -100,9 +100,9 @@ class mayaLightNodes():
         cmds.setAttr(light+".colorB",colorVal[2])    
     def getColor(self):
         lightColor = []
-        lightColor.append(cmds.getAttr(light+".colorR"))
-        lightColor.append(cmds.getAttr(light+".colorG"))
-        lightColor.append(cmds.getAttr(light+".colorB"))
+        lightColor.append(cmds.getAttr(self.lightName+".colorR"))
+        lightColor.append(cmds.getAttr(self.lightName+".colorG"))
+        lightColor.append(cmds.getAttr(self.lightName+".colorB"))
         return lightColor
         
 #Enable and Disable Lights'''    
@@ -270,13 +270,11 @@ class arnoldLightNodes():
     
     def __getattr__(self,attr):
         attr = attr.replace(" ","")
-        print "inside arnold getAttr" + " " + attr
         try:
             return self.attrValues[attr.lower()]
         except:
             print "Arnold Attribute not found"
-            
-        
+                   
 
 #Light Intensity     
     def setIntensity(self,val):
@@ -300,9 +298,9 @@ class arnoldLightNodes():
         cmds.setAttr(light+".colorB",colorVal[2])    
     def getColor(self):
         lightColor = []
-        lightColor.append(cmds.getAttr(light+".colorR"))
-        lightColor.append(cmds.getAttr(light+".colorG"))
-        lightColor.append(cmds.getAttr(light+".colorB"))
+        lightColor.append(cmds.getAttr(self.lightName+".colorR"))
+        lightColor.append(cmds.getAttr(self.lightName+".colorG"))
+        lightColor.append(cmds.getAttr(self.lightName+".colorB"))
         return lightColor
         
 #Enable and Disable Lights'''    
@@ -441,10 +439,10 @@ class arnoldLightNodes():
             
 
 #Create a model class for the TableView
-class myModel(QtCore.QAbstractTableModel):
+class myModel(QAbstractTableModel):
     
     def __init__(self,parent,lightType,header,lights,*args):
-        QtCore.QAbstractTableModel.__init__(self,parent,*args)
+        QAbstractTableModel.__init__(self,parent,*args)
         self.lightType = lightType
         self.param = header
         self.lights = lights
@@ -481,12 +479,12 @@ class myModel(QtCore.QAbstractTableModel):
 
 
 #Create Main Window for Maya
-class MainControlWindow(QtGui.QDialog):
+class MainControlWindow(QDialog):
      
      def __init__(self, parent=None):
          
          super(MainControlWindow, self).__init__(parent)
-         self.setWindowFlags(QtCore.Qt.Tool)
+         self.setWindowFlags(Qt.Tool)
          self.setWindowTitle("LightLeBhai")
          self.ui =  customUI.Ui_Form()
          self.ui.setupUi(self)
@@ -497,13 +495,13 @@ class MainControlWindow(QtGui.QDialog):
          mayaHeader = getMayaHeader()
          tableModelMaya = myModel(self, "Maya", mayaHeader,self.mayaLights)
          self.ui.tableView.setModel(tableModelMaya)
-         font = QtGui.QFont("Calibri", 12)
+         font = QFont("Calibri", 12)
          self.ui.tableView.setFont(font)
          # set Arnold table
          arnoldHeader = getArnoldHeader()
          tableModelArnold = myModel(self, "Arnold", arnoldHeader,self.arnoldLights)
          self.ui.tableView_2.setModel(tableModelArnold)
-         font = QtGui.QFont("Calibri", 12)
+         font = QFont("Calibri", 12)
          self.ui.tableView_2.setFont(font)
          # set column width to fit contents (set font first!)
          self.ui.tableView.resizeColumnsToContents()
@@ -591,7 +589,7 @@ def getArnoldHeader():
 #Creating a Maya Window to Append our Gui
 def getMayaWindow():
     pointer = mui.MQtUtil.mainWindow()
-    return shiboken.wrapInstance(long(pointer),QtGui.QWidget)
+    return shiboken.wrapInstance(long(pointer),QWidget)
 
 #Create a Window
 def lightListPanel():
