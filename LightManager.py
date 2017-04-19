@@ -7,8 +7,8 @@ Select and edit lights and their attributes from the window
 import maya.cmds as cmds
 from functools import partial
 import operator
-from PySide.QtCore import *
-from PySide.QtGui import *
+from PySide import QtCore
+from PySide import QtGui
 import maya.OpenMayaUI as mui
 import shiboken
 import sys, pprint
@@ -48,7 +48,9 @@ class mayaLightNodes():
             elif attr.lower() == "isolate":
                 attrValues[attr.lower()] = self.getEnableState()                   
             elif attr.lower() == "decayrate":
-                attrValues[attr.lower()] = self.getDecayRate()   
+                attrValues[attr.lower()] = self.getDecayRate()
+            elif attr.lower() == "decaytype":
+                attrValues[attr.lower()] = self.getDecayType()    
             elif attr.lower() == "shadows":
                 attrValues[attr.lower()] = self.getShadowsState()                   
             elif attr.lower() == "shadowrays":
@@ -167,9 +169,19 @@ class mayaLightNodes():
     def getExposure(self):
         if cmds.attributeQuery( 'exposure', node=self.lightName, ex = True ):
             return cmds.getAttr(self.lightName+".exposure")
+        elif cmds.attributeQuery( 'aiExposure', node=self.lightName, ex = True ):
+            return cmds.getAttr(self.lightName+".aiExposure")
         else:
             return "NA"
-        
+
+#Decay Type for Lights'''    
+    def setDecayType(self,val):
+        cmds.setAttr(self.lightName+".aiDecayType",val)        
+    def getDecayType(self):
+        if cmds.attributeQuery( 'aiDecayType', node=self.lightName, ex = True ):
+            return cmds.getAttr(self.lightName+".aiDecayType")
+        else:
+            return "NA"        
         
 #Setting the aiSamples'''
     def setAiSamples(self,val):
@@ -465,7 +477,16 @@ class myModel(QAbstractTableModel):
             return None
     
         attr = self.param[index.column()]
-        return self.lights[index.row()].__getattr__(attr)
+        custom = getCustomWidgetAttrs()
+        bool = False
+        for val in custom:
+            if val == attr:
+                bool = True
+                
+        if bool:
+            return None
+        else:
+            return self.lights[index.row()].__getattr__(attr)        
         
     def headerData(self, col, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
@@ -474,9 +495,32 @@ class myModel(QAbstractTableModel):
         
     
 #Create different Widgets for each attribute
-'''CheckBoxes for Isolate and Enable'''
-
-
+'''ComboBoxes for Isolate and Enable'''
+class comboDelegate(QtGui.QItemDelegate):
+    
+    def __init__(self,parent,comboList,view):
+        QtGui.QItemDelegate.__init__(self, parent)
+        self.comboList = comboList
+        self.tableView = view
+        
+    def createEditor(self,parent,option,index):
+        editor = QtGui.QComboBox(parent)
+        editor.addItems(self.comboList)  
+        self.connect(editor, QtCore.SIGNAL("currentIndexChanged(int)"), self, QtCore.SLOT("currentIndexChanged()"))
+        return editor
+        
+    def setEditorData(self, editor, index):
+        editor.blockSignals(True)
+        editor.setCurrentIndex(int(index.model().data(index)))
+        editor.blockSignals(False)
+        
+    def setModelData(self, editor, model, index):
+        model.setData(index, editor.currentIndex())
+        
+    @QtCore.Slot()
+    def currentIndexChanged(self):
+        self.commitData.emit(self.sender())    
+                
 
 #Create Main Window for Maya
 class MainControlWindow(QDialog):
@@ -497,6 +541,19 @@ class MainControlWindow(QDialog):
          self.ui.tableView.setModel(tableModelMaya)
          font = QFont("Calibri", 12)
          self.ui.tableView.setFont(font)
+         
+         #combo for decayRate 
+         decayRateCombo = comboDelegate(self,getDecayRateCombo(),self.ui.tableView)
+         self.ui.tableView.setItemDelegateForColumn(getColumnNumber(mayaHeader,'decayrate'), decayRateCombo)
+         for row in range(0,tableModelMaya.rowCount(self)):
+             self.ui.tableView.openPersistentEditor(tableModelMaya.index(row,getColumnNumber(mayaHeader,'decayrate'))) 
+             
+         #Combo for decayType
+         decayTypeCombo = comboDelegate(self,getDecayTypeCombo(),self.ui.tableView)
+         self.ui.tableView.setItemDelegateForColumn(getColumnNumber(mayaHeader,'decaytype'), decayTypeCombo)
+         for row in range(0,tableModelMaya.rowCount(self)):
+             self.ui.tableView.openPersistentEditor(tableModelMaya.index(row,getColumnNumber(mayaHeader,'decaytype')))                 
+
          # set Arnold table
          arnoldHeader = getArnoldHeader()
          tableModelArnold = myModel(self, "Arnold", arnoldHeader,self.arnoldLights)
@@ -575,7 +632,7 @@ class MainControlWindow(QDialog):
            
 #Define the parameters
 def getMayaHeader():
-    mayaHeader = ['Lights','Enable','Isolate','Color','Intensity', 'Decay Rate','Shadows','Shadow Rays','Exposure','Samples','Diffuse','Specular','SSS','Indirect','Volume']
+    mayaHeader = ['Lights','Enable','Isolate','Color','Intensity', 'Decay Rate','Decay Type','Shadows','Shadow Rays','Exposure','Samples','Diffuse','Specular','SSS','Indirect','Volume']
     #mayaHeader = ['Lights','Intensity', 'Decay Rate']
     return mayaHeader
     
@@ -583,8 +640,31 @@ def getArnoldHeader():
     arnoldHeader = ['Lights','Enable','Isolate','Color','Intensity', 'Decay Type','Cast Shadows','Affect Volumetrics','Cast Volumetric Shadows', 'Exposure','Samples','Diffuse','Specular','SSS','Indirect','Volume']
     #arnoldHeader = ['Lights','Intensity', 'Decay Type','Cast Volumetric Shadows','Volume']
     return arnoldHeader        
- 
 
+def getColumnNumber(header,attr):
+    for head in header:
+        var = head.replace(" ","")
+        var = var.lower()
+        if var == attr:
+            coloumn = header.index(head)
+    return coloumn   
+
+#define list of custom widget cells
+def getCustomWidgetAttrs():
+    list = ['Decay Rate','Decay Type']
+    return list
+
+ 
+#Define the list for the ComboBox
+#Decay Rate
+def getDecayRateCombo():
+    list = ['No decay','Linear','Quadratic','Cubic']
+    return list
+
+#Decay Type
+def getDecayTypeCombo():
+    list = ['Quadratic','Constant']
+    return list    
      
 #Creating a Maya Window to Append our Gui
 def getMayaWindow():
