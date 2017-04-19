@@ -506,20 +506,23 @@ class comboDelegate(QtGui.QItemDelegate):
     def createEditor(self,parent,option,index):
         editor = QtGui.QComboBox(parent)
         editor.addItems(self.comboList)  
-        self.connect(editor, QtCore.SIGNAL("currentIndexChanged(int)"), self, QtCore.SLOT("currentIndexChanged()"))
         return editor
         
     def setEditorData(self, editor, index):
-        editor.blockSignals(True)
-        editor.setCurrentIndex(int(index.model().data(index)))
-        editor.blockSignals(False)
+        value = index.model().data(index, QtCore.Qt.EditRole)
+        if value:
+            editor.setCurrentIndex(int(value))
         
     def setModelData(self, editor, model, index):
-        model.setData(index, editor.currentIndex())
+        model.setData(index, editor.currentIndex(), QtCore.Qt.EditRole)
         
-    @QtCore.Slot()
-    def currentIndexChanged(self):
-        self.commitData.emit(self.sender())    
+    def updateEditorGeometry(self, editor, option, index):
+        editor.setGeometry(option.rect)
+        
+    def paint(self, painter, option, index):
+        text = self.comboList[index.row()]
+        option.text = text
+        QtGui.QApplication.style().drawControl(QtGui.QStyle.CE_ItemViewItem, option, painter)    
                 
 
 #Create Main Window for Maya
