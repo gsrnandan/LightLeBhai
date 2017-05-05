@@ -1,58 +1,153 @@
-from PySide import QtGui  
+import maya.cmds as cmds
+from functools import partial
+import operator
 from PySide import QtCore
-from PySide import QtUiTools
-import pysideuic
+from PySide import QtGui
 import maya.OpenMayaUI as mui
 import shiboken
-import xml.etree.ElementTree as xml
-from cStringIO import StringIO
+import sys, pprint
+import maya.OpenMaya as OpenMaya
+from pysideuic import compileUi
+pyfile = open("/homes/govindaluris/Documents/light/tableView.py", 'w')
+compileUi("/homes/govindaluris/Documents/light/tableView.ui", pyfile, False, 4,False)
+pyfile.close()
+import tableView as customUI
 
-def loadUiType(uiFile):
-	    """
-	    Pyside lacks the "loadUiType" command, so we have to convert the ui file to py code in-memory first
-	    and then execute it in a special frame to retrieve the form_class.
-	    """
-	    parsed = xml.parse(uiFile)
-	    widget_class = parsed.find('widget').get('class')
-	    form_class = parsed.find('class').text
-	
-	    with open(uiFile, 'r') as f:
-	    	o = StringIO()
-	    	frame = {}
-			
-	    	pysideuic.compileUi(f, o, indent=0)
-	    	pyc = compile(o.getvalue(), '<string>', 'exec')
-	    	exec pyc in frame
-			
-	    	#Fetch the base_class and form class based on their type in the xml from designer
-	    	form_class = frame['Ui_%s'%form_class]
-	    	base_class = eval('QtGui.%s'%widget_class)
-	    return form_class, base_class
 
-class WndTutorial05(base, form):
+table = [[1,2,3],[4,5,6],[7,8,9]]
+
+def getMayaWindow():
+    pointer = mui.MQtUtil.mainWindow()
+    return shiboken.wrapInstance(long(pointer),QtGui.QWidget)
     
-    def __init__(self, parent=None):
-        super(base, self).__init__(parent)
-        self.setupUi(self)
 
+def getTable():
+    return table
 
-class MainControlWindow(QtGui.QDialog):
-     
+def getHeader():
+    header = ["Pallete0", "Colors", "Brushes"]
+    return header 
+    
+class MainControlWindow(QtGui.QMainWindow):
+
+      
      def __init__(self, parent=None):
          
          super(MainControlWindow, self).__init__(parent)
-         tableView = QtGui.QTableView()
+         self.setWindowFlags(QtCore.Qt.Tool)         
+         self.ui =  customUI.Ui_uiMainWindow()
+         self.ui.setupUi(self)
+         self.table = [[1,2,3],[4,5,6],[7,8,9]]
+         self.model = PaletteTableModel(self.table,getHeader())
+         self.ui.uiTable.setModel(self.model)
+         font = QtGui.QFont("Calibri", 12)
+         self.ui.uiTable.setFont(font)
+         
+         
+     def closeEvent(self, event):
+         deleteCallBacks()     
+         
+         
+class PaletteTableModel(QtCore.QAbstractTableModel):
+    
+    def __init__(self, table = [[]], headers = [], parent = None):
+        QtCore.QAbstractTableModel.__init__(self, parent)
+        self.__table = table
+        self.__headers = headers
 
-base, form = loadUiType("/homes/govindaluris/Documents/light/tableView.ui")
+
+
+    def rowCount(self, parent):
+        return len(self.__table)
+    
+    
+    def columnCount(self, parent):
+        return len(self.__table[0])
+
+
+    def flags(self, index):
+        return QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable
+
+
+    def data(self, index, role):
+        
+        if role == QtCore.Qt.EditRole:
+            row = index.row()
+            column = index.column()
+            return self.__table[row][column]
+        
+        
+        if role == QtCore.Qt.ToolTipRole:
+            row = index.row()
+            column = index.column()
+            return  self.__table[row][column]
+        
+              
+        if role == QtCore.Qt.DisplayRole:
+            
+            row = index.row()
+            column = index.column()
+            value = self.__table[row][column]
+            return value
+
+
+    def setData(self, index, value, role = QtCore.Qt.EditRole):
+        if role == QtCore.Qt.EditRole:
+            
+            row = index.row()
+            column = index.column()            
+            self.__table[row][column] = value
+            self.dataChanged.emit(row, column)
+            cmds.setAttr('pointLightShape1'+".intensity",value)
+            return True
+
+
+
+
+
+    def headerData(self, section, orientation, role):
+        
+        if role == QtCore.Qt.DisplayRole:
+            
+            if orientation == QtCore.Qt.Horizontal:
+                
+                if section < len(self.__headers):
+                    return self.__headers[section]
+                else:
+                    return "not implemented"
+            else:
+                return "Wassup"
+                
+                
+def deleteCallBacks():
+    for callback in callBacks:
+        OpenMaya.MMessage.removeCallback( callback )
+
+callBacks = []                      
+
+def updateTable(*args,**Kwargs):
+    val = cmds.getAttr(' pointLightShape1'+ ".intensity")
+    win.model.layoutAboutToBeChanged.emit()
+    win.table[0][0] = val
+    win.table[2][2] = val
+    win.model.layoutChanged.emit()
+
 
 if __name__ == '__main__':
-     
-          
-    pointer = mui.MQtUtil.mainWindow()    
-    win = WndTutorial05()
+        
+    pointer = mui.MQtUtil.mainWindow()
+    win = MainControlWindow(parent = shiboken.wrapInstance(long(pointer),QtGui.QWidget))
     win.setWindowTitle("LightLeBhai")
-    win.setStyle(QtGui.QStyleFactory.create('Cleanlooks'))
     win.show()
+    print win.table
+    
+    selectionList = OpenMaya.MSelectionList()
+    selectionList.add( ' pointLightShape1'  )
+    node = OpenMaya.MObject()
+    selectionList.getDependNode( 0, node )
+    callBacks.append(OpenMaya.MNodeMessage.addAttributeChangedCallback( node, updateTable))
+    
     
 
+    
     
